@@ -22,6 +22,15 @@
 #include <map>
 
 #include <math.h>
+
+#ifndef SAPPORO_TEST_PARTICLE_MASS
+# if defined(_TINY_)
+#   define SAPPORO_TEST_PARTICLE_MASS ((float)(_TINY_))
+# else
+#   define SAPPORO_TEST_PARTICLE_MASS 1e-30f
+# endif
+#endif
+
 using namespace std;
 
 #include <cuda_runtime.h>
@@ -116,6 +125,7 @@ protected:
   double EPS2;
 
   int            nj_modified;
+  int            nj_massive;  // number of particles with mass > SAPPORO_TEST_PARTICLE_MASS
   vector<int>    address_j;
   vector<DS2>    t_j;
   vector<DS4>    pos_j;
@@ -170,6 +180,7 @@ public:
 
     predict = false;
     nj_modified = 0;
+    nj_massive = 0;
 
     device.address_j = NULL;
 
