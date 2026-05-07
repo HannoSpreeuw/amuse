@@ -3,6 +3,11 @@
 
 __constant__ float EPS2;
 
+// Test particle mass threshold - matches SAPPORO_TEST_PARTICLE_MASS from sapporo.h
+#ifndef SAPPORO_TEST_PARTICLE_MASS
+#define SAPPORO_TEST_PARTICLE_MASS 1e-30f
+#endif
+
 typedef float2 DS;  // double single;
 
 struct DS4 {
@@ -75,35 +80,37 @@ __device__ void body_body_interaction(float &ds_min,
   
   float mass    = pos_j.w.x;
   
-  // Mass check is not needed anymore: particles are sorted by mass on the host,
-  // and only massive particles (mass > SAPPORO_TEST_PARTICLE_MASS) are sent to the GPU kernel.
-  // This eliminates branch divergence and improves GPU efficiency.
+  // Skip particles with zero mass (test particles).
+  // Particles are sorted by mass on host (massive first), improving GPU memory access patterns
+  // and reducing warp divergence when blocks naturally align with massive/test boundaries.
+  if (mass > SAPPORO_TEST_PARTICLE_MASS) {
+  
+    float inv_ds = 0.0f;
+    if (__float_as_int(pos_i.w.y) != __float_as_int(pos_j.w.y)) {
+        inv_ds = rsqrt(ds2 + EPS2);
+    }
 
-  float inv_ds = 0.0f;
-  if (__float_as_int(pos_i.w.y) != __float_as_int(pos_j.w.y)) {
-      inv_ds = rsqrt(ds2 + EPS2);
+    float inv_ds2 = inv_ds*inv_ds;                         // 1 FLOP
+    float inv_ds3 = mass * inv_ds*inv_ds2;                 // 2 FLOP
+    
+    // 3*4 + 3 = 15 FLOP
+    acc_i.x = ((inv_ds3 * dr.x) + acc_i.x);
+    acc_i.y = ((inv_ds3 * dr.y) + acc_i.y);
+    acc_i.z = ((inv_ds3 * dr.z) + acc_i.z);
+    
+    acc_i.w = (mass * inv_ds  + acc_i.w);
+
+    float3 dv;    // 3 FLOP
+    dv.x = vel_j.x - vel_i.x;
+    dv.y = vel_j.y - vel_i.y;
+    dv.z = vel_j.z - vel_i.z;
+
+    float drdv = -3.0f * (inv_ds3*inv_ds2) * (((dr.x*dv.x) + dr.y*dv.y) + dr.z*dv.z);
+
+    jrk_i.x = (jrk_i.x + inv_ds3 * dv.x) + drdv * dr.x;
+    jrk_i.y = (jrk_i.y + inv_ds3 * dv.y) + drdv * dr.y;
+    jrk_i.z = (jrk_i.z + inv_ds3 * dv.z) + drdv * dr.z;
   }
-
-  float inv_ds2 = inv_ds*inv_ds;                         // 1 FLOP
-  float inv_ds3 = mass * inv_ds*inv_ds2;                 // 2 FLOP
-  
-  // 3*4 + 3 = 15 FLOP
-  acc_i.x = ((inv_ds3 * dr.x) + acc_i.x);
-  acc_i.y = ((inv_ds3 * dr.y) + acc_i.y);
-  acc_i.z = ((inv_ds3 * dr.z) + acc_i.z);
-  
-  acc_i.w = (mass * inv_ds  + acc_i.w);
-
-  float3 dv;    // 3 FLOP
-  dv.x = vel_j.x - vel_i.x;
-  dv.y = vel_j.y - vel_i.y;
-  dv.z = vel_j.z - vel_i.z;
-
-  float drdv = -3.0f * (inv_ds3*inv_ds2) * (((dr.x*dv.x) + dr.y*dv.y) + dr.z*dv.z);
-
-  jrk_i.x = (jrk_i.x + inv_ds3 * dv.x) + drdv * dr.x;
-  jrk_i.y = (jrk_i.y + inv_ds3 * dv.y) + drdv * dr.y;
-  jrk_i.z = (jrk_i.z + inv_ds3 * dv.z) + drdv * dr.z;
 
 
   // TOTAL 50 FLOP (or 60 FLOP if compared against GRAPE6)
