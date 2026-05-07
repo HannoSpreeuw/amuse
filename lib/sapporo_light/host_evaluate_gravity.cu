@@ -93,7 +93,7 @@ extern "C"
     dim3 grid(NBLOCKS, 1, 1);
 
     int shared_mem_size = p*q*(sizeof(DS4) + sizeof(float4));
-    int nj_scaled = n_norm(gpu.nj, q*NBLOCKS);
+    int nj_scaled = n_norm(gpu.nj_massive, q*NBLOCKS);
    
     #if CUDART_VERSION < 5000
     CUDA_SAFE_CALL(cudaMemcpyToSymbol(
@@ -115,7 +115,7 @@ extern "C"
     
     double t1 = get_time();
     if (gpu.ngb)
-      dev_evaluate_gravity<true><<<grid, threads, shared_mem_size>>>(gpu.nj, 
+      dev_evaluate_gravity<true><<<grid, threads, shared_mem_size>>>(gpu.nj_massive, 
                                                                      nj_scaled/(NBLOCKS*q),
                                                                      NTHREADS,
                                                                      gpu.Ppos_j+ ofs,
@@ -124,7 +124,7 @@ extern "C"
                                                                      gpu.acc_i,  gpu.jrk_i,
                                                                      gpu.ngb_list);
     else
-      dev_evaluate_gravity<false><<<grid, threads, shared_mem_size>>>(gpu.nj, 
+      dev_evaluate_gravity<false><<<grid, threads, shared_mem_size>>>(gpu.nj_massive, 
                                                                       nj_scaled/(NBLOCKS*q),
                                                                       NTHREADS,
                                                                       gpu.Ppos_j + ofs, 
