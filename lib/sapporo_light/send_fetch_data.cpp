@@ -141,6 +141,7 @@ double sapporo::evaluate_gravity(int ni, int nj) {
     
     gpu.nj_max = nj_max;
     gpu.nj_modified = nj_modified;
+    gpu.nj_massive = nj_massive;  // number of massive (non-test) particles
     gpu.predict     = predict;
     
     gpu.t_i_x = t_i.x;
