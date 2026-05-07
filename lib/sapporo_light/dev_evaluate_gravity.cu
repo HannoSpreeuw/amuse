@@ -76,7 +76,7 @@ __device__ void body_body_interaction(float &ds_min,
   float mass    = pos_j.w.x;
   
   // Mass check is not needed anymore: particles are sorted by mass on the host,
-  // and only massive particles (mass > 1e-30f) are sent to the GPU kernel.
+  // and only massive particles (mass > SAPPORO_TEST_PARTICLE_MASS) are sent to the GPU kernel.
   // This eliminates branch divergence and improves GPU efficiency.
 
   float inv_ds = 0.0f;
