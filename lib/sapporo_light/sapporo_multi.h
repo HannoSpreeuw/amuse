@@ -10,6 +10,7 @@ struct sapporo_multi_struct {
   bool ngb;
   int nj, ni;
   int nj_total;
+  int nj_massive;  // number of particles with mass > SAPPORO_TEST_PARTICLE_MASS
   int  nj_max;
   int     nj_modified;
   bool    predict;
