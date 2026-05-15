@@ -79,6 +79,9 @@ int sapporo::set_j_particle(int cluster_id,
     exit(-1);
   }
 
+  // Skip test particles (massless particles) as they don't contribute to gravity
+  if (mass <= SAPPORO_TEST_PARTICLE_MASS) return 0;
+
     DS  Dmass = (DS){mass, INT_AS_FLOAT(id)};
     map<int,int>::iterator iterator = mapping_from_address_j_to_index_in_update_array.find(address);
     map<int,int>::iterator end = mapping_from_address_j_to_index_in_update_array.end();
@@ -134,55 +137,7 @@ void sapporo::calc_firsthalf(int cluster_id,
   }
 
   if (address_j.size() > 0) {
-    // Sort particles by mass: massive particles first, test particles
-    // (mass <= SAPPORO_TEST_PARTICLE_MASS) last. This eliminates branch divergence.
-    std::vector<int> sort_indices(address_j.size());
-    for (int i = 0; i < (int)address_j.size(); i++) {
-      sort_indices[i] = i;
-    }
-    
-    std::sort(sort_indices.begin(), sort_indices.end(),
-              [this](int i, int j) {
-                // Sort by mass in descending order (massive first)
-                float mass_i = pos_j[i].w.x;
-                float mass_j = pos_j[j].w.x;
-                return mass_i > mass_j;
-              });
-    
-    // Reorder all particle vectors according to sort_indices
-    std::vector<int>    sorted_address_j(address_j.size());
-    std::vector<DS2>    sorted_t_j(t_j.size());
-    std::vector<DS4>    sorted_pos_j(pos_j.size());
-    std::vector<float4> sorted_vel_j(vel_j.size());
-    std::vector<float4> sorted_acc_j(acc_j.size());
-    std::vector<float4> sorted_jrk_j(jrk_j.size());
-    
-    for (int i = 0; i < (int)address_j.size(); i++) {
-      int idx = sort_indices[i];
-      sorted_address_j[i] = address_j[idx];
-      sorted_t_j[i]       = t_j[idx];
-      sorted_pos_j[i]     = pos_j[idx];
-      sorted_vel_j[i]     = vel_j[idx];
-      sorted_acc_j[i]     = acc_j[idx];
-      sorted_jrk_j[i]     = jrk_j[idx];
-    }
-    
-    address_j = sorted_address_j;
-    t_j       = sorted_t_j;
-    pos_j     = sorted_pos_j;
-    vel_j     = sorted_vel_j;
-    acc_j     = sorted_acc_j;
-    jrk_j     = sorted_jrk_j;
-    
-    // Count particles with mass > threshold
-    nj_massive = 0;
-    for (int i = 0; i < (int)address_j.size(); i++) {
-      if (pos_j[i].w.x > SAPPORO_TEST_PARTICLE_MASS) {
-        nj_massive++;
-      } else {
-        break;  // remaining particles are test particles (sorted to the end)
-      }
-    }
+    // Since we skip adding test particles, all particles in address_j are massive
     
     send_j_particles_to_device(device_id);
   }
