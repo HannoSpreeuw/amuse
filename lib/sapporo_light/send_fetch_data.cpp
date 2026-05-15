@@ -111,6 +111,9 @@ int sapporo::fetch_ngb_list_from_device(int ignore) {
 
 
 double sapporo::evaluate_gravity(int ni, int nj) {
+    // If no j particles, skip evaluation to avoid kernel launch with nj=0
+    if (nj == 0) return 0;
+
 #ifdef NGB
     bool ngb = true;
 #else
@@ -141,7 +144,6 @@ double sapporo::evaluate_gravity(int ni, int nj) {
     
     gpu.nj_max = nj_max;
     gpu.nj_modified = nj_modified;
-    gpu.nj_massive = nj_massive;  // number of massive (non-test) particles
     gpu.predict     = predict;
     
     gpu.t_i_x = t_i.x;
