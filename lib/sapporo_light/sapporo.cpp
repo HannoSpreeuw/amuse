@@ -138,7 +138,6 @@ void sapporo::calc_firsthalf(int cluster_id,
 
   if (address_j.size() > 0) {
     // Since we skip adding test particles, all particles in address_j are massive
-    
     send_j_particles_to_device(device_id);
   }
 
