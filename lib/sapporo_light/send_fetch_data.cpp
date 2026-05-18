@@ -111,8 +111,6 @@ int sapporo::fetch_ngb_list_from_device(int ignore) {
 
 
 double sapporo::evaluate_gravity(int ni, int nj) {
-    // If no j particles, skip evaluation to avoid kernel launch with nj=0
-    if (nj == 0) return 0;
 
 #ifdef NGB
     bool ngb = true;
