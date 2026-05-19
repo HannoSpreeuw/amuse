@@ -141,10 +141,6 @@ int jdata::add_particle(real pmass, real pradius,
     const char *in_function = "jdata::add_particle";
 
     if (pmass <= _TINY_) {
-        if (mpi_rank == 0) {
-            cerr << "Warning: ignoring particle with mass="
-                 << pmass << endl;
-        }
         return -1;
     }
     if (DEBUG > 2 && mpi_rank == 0) PRL(in_function);
