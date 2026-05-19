@@ -151,7 +151,9 @@ void sapporo::calc_firsthalf(int cluster_id,
     acc_j.clear();
     jrk_j.clear();
   }
-  evaluate_gravity(ni, nj);
+  if (nj > 0) {
+    evaluate_gravity(ni, nj);
+  }
 
 }
 
